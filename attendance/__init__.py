@@ -17,8 +17,8 @@ class AttendanceTool:
         self.root = path
         self.widgets: Dict[str, widgets.Widget] = dict(
             offset = widgets.IntSlider(
-                value=1,
-                min=1,
+                value=0,
+                min=0,
                 max=100,
                 step=1,
                 description='Index',
@@ -37,7 +37,7 @@ class AttendanceTool:
                 disabled=False
             ),
             display_size = widgets.IntSlider(
-                value=1600,
+                value=1200,
                 min=320,
                 max=3840,
                 step=10,
@@ -69,6 +69,12 @@ class AttendanceTool:
                 rows=10,
                 description='Image',
                 disabled=False
+            ),
+            mode = widgets.ToggleButtons(
+                options = ['Label', 'Remove'],
+                value='Label',
+                description='Mode',
+                tooltips=['Label', 'Remove']
             )
         )
         
@@ -114,23 +120,21 @@ class AttendanceTool:
         return value
 
     def on_btn_start(self, _):
-        self.on_btn_clear(None)
+        self.labels.clear()
+        self.canvas[1].clear()
+        self.out.clear_output()
         
         with self.out:
-            print(f'Loading image {self.conf("file")}', flush=True)
+            print(f'Loading image {self.conf("file")}')
             self.load_image()
-            canvas = self.draw_canvas()
-        
-        display(self.canvas)
-
-        # with self.out_canvas:
-        #     display(canvas)
+            self.draw_canvas()
+    
+    def display(self):
+        return self.canvas
 
     def on_btn_clear(self, _):
-        # self.out.clear_output()
-        # self.out_canvas.clear_output()
-        # self.canvas.clear()
-        self.clear_labels()
+        self.labels.clear()
+        self.canvas[1].clear()
 
     def on_btn_undo(self, _):
         self.labels.pop()
@@ -141,7 +145,7 @@ class AttendanceTool:
             path, base = os.path.split(self.image_path)
             output = os.path.join(path, f'labeled_{".".join(base.split(".")[:-1])}.png')
             self.canvas.to_file(output)
-            print(f'Saved to {output}', flush=True)
+            print(f'Saved to {output}')
 
 
     def load_image(self, verbose=True):
@@ -150,9 +154,6 @@ class AttendanceTool:
         self.image_size = self.image.size
         if verbose:
             print(f'Image Loaded. Size: {self.image_size}')
-    
-    def clear_labels(self):
-        self.canvas[1].clear()
 
     def draw_canvas(self, verbose=True):
         w, h = self.image_size
@@ -165,8 +166,10 @@ class AttendanceTool:
             
         if verbose:
             print(f'Canvas size: {canvas_size}')
+
+        self.canvas.width = canvas_size[0]
+        self.canvas.height = canvas_size[1]
         
-        self.canvas = MultiCanvas(2, width=canvas_size[0], height=canvas_size[1], sync_image_data=True)
         # self.canvas[0].draw_image(self.image, width=canvas_size[0], height=canvas_size[1])
         self.canvas[0].put_image_data(np.array(self.image.resize(canvas_size)))
         self.canvas.on_mouse_down(self.on_click)
@@ -178,18 +181,41 @@ class AttendanceTool:
 
     @out.capture()
     def on_click(self, x, y):
-        idx = self.index()
-        text_format: str = self.conf('prefix') + "{0:" + self.conf('format') + "}"
-        text = text_format.format(idx)
-        self.widgets['offset'].value = idx + 1
+        mode = self.conf('mode')
+        if mode == 'Label':
+            idx = self.index()
+            text_format: str = self.conf('prefix') + "{0:" + self.conf('format') + "}"
+            text = text_format.format(idx)
+            self.widgets['offset'].value = idx + 1
 
-        self.labels.append(Label(text, x, y, self.conf("ALL")))
+            self.labels.append(Label(text, x, y, self.conf("ALL")))
+        elif mode == 'Remove':
+            self.remove_nearest_label(x, y)
+
         self.draw_labels()
+
+    def remove_nearest_label(self, x, y):
+        if len(self.labels) < 1:
+            return
+        
+        def distance(label: Label):
+            return (label.x - x) ** 2 + (label.y - y) ** 2
+
+        idx = 0
+        dist = distance(self.labels[0])
+
+        for i, label in enumerate(self.labels):
+            d = distance(label)
+            if d < dist:
+                dist = d
+                idx = i
+        
+        self.labels.pop(idx)
 
 
     def draw_labels(self):
         with hold_canvas():
-            self.clear_labels()
+            self.canvas[1].clear()
             canvas = self.canvas[1]
             for label in self.labels:
                 conf = label.conf
