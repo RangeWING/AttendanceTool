@@ -1,0 +1,5 @@
+numpy
+easydict
+Pillow
+ipykernel
+ipycanvas
