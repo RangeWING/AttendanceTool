@@ -97,7 +97,7 @@ class AttendanceTool:
         )
         
         self.btns: Dict[str, widgets.Widget] = dict(
-            start = widgets.Button(
+            load = widgets.Button(
                 description='Load',
                 button_style='info',
                 tooltip='Load'
@@ -112,17 +112,22 @@ class AttendanceTool:
                 button_style='success',
                 tooltip='Save'
             ),
+            rotate = widgets.Button(
+                description='Rotate',
+                tooltip='Rotate'
+            ),
             undo = widgets.Button(
                 description='Undo',
-                tooltip='Save'
+                tooltip='Undo'
             )
         )
 
         self.canvas = MultiCanvas(2, width=100, height=100)
-        self.btns['start'].on_click(self.on_btn_start)
+        self.btns['load'].on_click(self.on_btn_load)
         self.btns['clear'].on_click(self.on_btn_clear)
         self.btns['save'].on_click(self.on_btn_save)
         self.btns['undo'].on_click(self.on_btn_undo)
+        self.btns['rotate'].on_click(self.on_btn_rotate)
 
         self.widgets['file'].observe(self.on_select_image, 'value')
         self.on_select_image(None)
@@ -156,7 +161,7 @@ class AttendanceTool:
         value = self.widgets[key].value
         return value
 
-    def on_btn_start(self, _):
+    def on_btn_load(self, _):
         self.labels.clear()
         self.canvas[1].clear()
         self.out.clear_output()
@@ -175,6 +180,13 @@ class AttendanceTool:
     def on_btn_undo(self, _):
         self.labels.pop()
         self.draw_labels()
+    
+    def on_btn_rotate(self, _):     
+        with self.out:
+            self.image = self.image.rotate(90, expand=True)
+            self.draw_canvas()
+            self.draw_labels()
+
 
     def on_btn_save(self, _):
         with self.out:
@@ -204,22 +216,21 @@ class AttendanceTool:
 
         self.image_path = os.path.join(self.root, self.conf('file'))
         self.image = PILImage.open(self.image_path)
-        self.image_size = self.image.size
 
         if verbose:
-            print(f'Done. Size: {self.image_size}')
+            print(f'Done. Size: {self.image.size}')
 
     def draw_canvas(self, verbose=True):
-        w, h = self.image_size
+        w, h = self.image.size
         max_w = self.conf('display_size') #max width
         if w > max_w:
             r = max_w / w
             canvas_size = (int(w * r), int(h * r))
+            if verbose:
+                print(f'Image resized: {self.image.size} -> {canvas_size}')
         else:
             canvas_size = w, h
             
-        if verbose:
-            print(f'Canvas size: {canvas_size}')
 
         self.canvas.width = canvas_size[0]
         self.canvas.height = canvas_size[1]
