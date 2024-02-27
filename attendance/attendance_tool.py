@@ -129,6 +129,9 @@ class AttendanceTool:
         self.btns['undo'].on_click(self.on_btn_undo)
         self.btns['rotate'].on_click(self.on_btn_rotate)
 
+        self.canvas.on_mouse_down(self.on_click)
+        self.canvas.on_key_down(self.on_keydown)
+
         self.widgets['file'].observe(self.on_select_image, 'value')
         self.on_select_image(None)
 
@@ -187,6 +190,12 @@ class AttendanceTool:
             self.draw_canvas()
             self.draw_labels()
 
+    def on_btn_rotate_CW(self, _):     
+        with self.out:
+            self.image = self.image.rotate(-90, expand=True)
+            self.draw_canvas()
+            self.draw_labels()
+
 
     def on_btn_save(self, _):
         with self.out:
@@ -237,7 +246,6 @@ class AttendanceTool:
         
         # self.canvas[0].draw_image(self.image, width=canvas_size[0], height=canvas_size[1])
         self.canvas[0].put_image_data(np.array(self.image.resize(canvas_size)))
-        self.canvas.on_mouse_down(self.on_click)
         self.canvas_size = canvas_size
         return self.canvas
 
@@ -258,6 +266,27 @@ class AttendanceTool:
             self.remove_nearest_label(x, y)
 
         self.draw_labels()
+    
+    @out.capture()
+    def on_keydown(self, key, shift_key, ctrl_key, meta_key):
+        if key == 'z':
+            self.on_btn_undo(None)
+        elif ord('1') <= ord(key) <= ord('9'):
+            i = ord(key) - ord('1')
+            self.widgets['fontsize'].value = 8 + (8 * i)
+        elif key == 's':
+            self.on_btn_save(None)
+        elif key == 'r':
+            self.on_btn_rotate(None)
+        elif key == 't':
+            self.on_btn_rotate_CW(None)
+        elif key == 'o':
+            self.widgets['mode'].value = 'Label'
+        elif key == 'p':
+            self.widgets['mode'].value = 'Remove'
+        elif key == 'c':
+            self.on_btn_clear(None)
+
 
     def remove_nearest_label(self, x, y):
         if len(self.labels) < 1:
