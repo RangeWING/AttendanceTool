@@ -161,3 +161,8 @@ cython_debug/
 
 images/
 .conda
+attendance_old.py
+numbering.ipynb
+numbering.py
+result.png
+attendance-test.ipynb

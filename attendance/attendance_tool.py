@@ -183,6 +183,7 @@ class AttendanceTool:
     def on_btn_undo(self, _):
         self.labels.pop()
         self.draw_labels()
+        self.widgets['offset'].value = self.widgets['offset'].value - 1
     
     def on_btn_rotate(self, _):     
         with self.out:
@@ -286,6 +287,12 @@ class AttendanceTool:
             self.widgets['mode'].value = 'Remove'
         elif key == 'c':
             self.on_btn_clear(None)
+        elif key == '0':
+            self.widgets['offset'].value = 0
+        elif key == '+' or key == '=':
+            self.widgets['offset'].value = self.widgets['offset'].value + 1
+        elif key == '-':
+            self.widgets['offset'].value = self.widgets['offset'].value - 1
 
 
     def remove_nearest_label(self, x, y):
