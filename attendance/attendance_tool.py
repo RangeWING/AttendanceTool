@@ -50,7 +50,7 @@ class AttendanceTool:
                 disabled=False
             ),
             display_size = widgets.IntSlider(
-                value=1200,
+                value=1600,
                 min=320,
                 max=3840,
                 step=10,
@@ -60,10 +60,11 @@ class AttendanceTool:
             ),
             fontsize = widgets.IntSlider(
                 value=32,
-                min=1,
-                max=100,
-                step=1,
+                min=4,
+                max=256,
+                step=4,
                 description='Font Size',
+                layout={'width': '30%'},
                 disabled=False
             ),
             file = widgets.Select(
@@ -273,8 +274,11 @@ class AttendanceTool:
         if key == 'z':
             self.on_btn_undo(None)
         elif ord('1') <= ord(key) <= ord('9'):
+            minsize = self.conf('display_size') // 100
+            maxsize = self.conf('display_size') // 16
+            step = (maxsize - minsize) / 9
             i = ord(key) - ord('1')
-            self.widgets['fontsize'].value = 8 + (8 * i)
+            self.widgets['fontsize'].value = int(minsize + (step * i))
         elif key == 's':
             self.on_btn_save(None)
         elif key == 'r':
